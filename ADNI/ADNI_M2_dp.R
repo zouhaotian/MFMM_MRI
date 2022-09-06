@@ -17,7 +17,7 @@ library(orthogonalsplinebasis)
 library(statmod)
 library(tdROC)
 library(ipred)
-rstan_options(auto_write = TRUE)
+rstan_options(auto_write = FALSE)
 
 # seed <- 1
 set.seed(2021*seed)
@@ -354,12 +354,11 @@ mu_m_smooth = bs.smooth(mu_m, obsgrid, obsgrid, nbasis = Pm)
 mu_m_expand = matrix(rep(mu_m_smooth$est.value, N.train), nrow = N.train, byrow = T)
 M.demean = M.train - mu_m_expand
 
-Lm = 10
 
 phi_m.sign = rep(1, L0)
 phi_m.index = rep(1, L0)
-psi_m.sign = rep(1, Lm)
-psi_m.index = rep(1, Lm)
+psi_m.sign = NULL
+psi_m.index = NULL
 
 sign_beta_m = -1
 
@@ -369,7 +368,7 @@ ID2 = tmp.ID
 xi1 = summary.xi[ID1, 1:L0]; xi2 = summary.xi[ID2, 1:L0]
 M1 = M.demean[ID1, ]; M2 = M.demean[ID2, ]
 
-res = search(M1, M2, xi1, xi2, L0, Lm, V, 
+res = search(M1, M2, xi1, xi2, L0, Lm = NULL, V, 
              phi_m.sign, phi_m.index, 
              psi_m.sign, psi_m.index,
              max.iters = 200, eps = 5e-4, 
@@ -379,6 +378,7 @@ beta_m <- res$beta_m
 dm <- res$dm
 Phi_m_est <- res$Phi_m_est
 Psi_m_est <- res$Psi_m_est
+Lm = res$Lm
 
 ## Create m_{ij} matrix ##
 m_mat = matrix(NA, nrow = N.train, ncol = Lm)
@@ -452,8 +452,8 @@ pars <- c('A1', 'A2', 'A3', 'A4', 'A5',
           'beta', 'sigma',
           'logh0', 'gamma_x', 'gamma0', 
           'gamma1', 'gamma_m')
-n.iters = 5000
-n.warmups = 4000
+n.iters = 3000
+n.warmups = 2000
 fitStan <- sampling(md, data = stan_dat, iter = n.iters, warmup = n.warmups, 
                     chains = 2, thin=1, init = inits, pars = pars, seed = 2021,
                     control = list(adapt_delta = 0.8, max_treedepth=10))

@@ -16,7 +16,7 @@ library(mfaces)
 library(orthogonalsplinebasis)
 library(tdROC)
 library(ipred)
-rstan_options(auto_write = TRUE)
+rstan_options(auto_write = FALSE)
 
 # seed <- 1
 set.seed(2010*seed)

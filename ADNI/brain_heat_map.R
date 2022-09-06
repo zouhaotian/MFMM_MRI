@@ -10,7 +10,7 @@ MRI.dat <- fread("dataset/Surv.mri.dat.csv") %>% as.matrix()
 N = nrow(MRI.dat)
 V = ncol(MRI.dat)
 L0 = 2
-Lm = 5
+load('RData2/whole_Lm.RData')
 obsgrid = (1:V)/V
 
 M.train = MRI.dat
@@ -21,7 +21,7 @@ mu_m_smooth = bs.smooth(mu_m, obsgrid, obsgrid, nbasis = Pm)
 mu_m_expand = matrix(rep(mu_m_smooth$est.value, N), nrow = N, byrow = T)
 M.demean = M.train - mu_m_expand
 
-fname <- paste0('RData/summary/summary_posterior_M2_whole.RData')
+fname <- paste0('RData2/summary_posterior_M2_whole.RData')
 load(fname)
 
 ## Create m_{ij} matrix ##
@@ -54,7 +54,7 @@ u_mi <- (Phi_m_est %*% xi[, i])[, 1]
 xi_mi <- m_mat[1, ] - beta_m* (t(f_l) %*% xi[, i])
 f_mi <- (Psi_m_est %*% xi_mi)[, 1]
 
-fname = 'RData/brain_heat_map.RData'
+fname = 'RData2/brain_heat_map.RData'
 save(list = c('mi', 'mu_m', 'u_mi', 'f_mi'), file = fname)
 # load(fname)
 
@@ -113,7 +113,7 @@ surv.dat$mu_m = mu_m
 surv.dat$u_mi = u_mi
 surv.dat$f_mi = f_mi
 
-fname = 'RData/surv_brain_heat_map.RData'
+fname = 'RData2/surv_brain_heat_map.RData'
 save(list = 'surv.dat', file = fname)
 # load(fname)
 

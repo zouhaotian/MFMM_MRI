@@ -7,9 +7,9 @@
 ## eps: maximum epsilon allowed (difference in \beta_m between new values and old values)
 ## beta_m, Phi_m_est: initial values of beta_m and Phi_m_est
 
-search <- function(M1, M2, xi1, xi2, L0, Lm, V, 
+search <- function(M1, M2, xi1, xi2, L0, Lm = NULL, V, 
                    phi_m.sign, phi_m.index, 
-                   psi_m.sign, psi_m.index, 
+                   psi_m.sign = NULL, psi_m.index = NULL, 
                    max.iters = 20, eps = 1e-5, 
                    beta_m = NULL, Phi_m_est = NULL, 
                    d0, sign_beta_m){
@@ -45,10 +45,12 @@ search <- function(M1, M2, xi1, xi2, L0, Lm, V,
     res = eigen2(cov.mat.approx, n.values = Lm, V = V, sign = psi_m.sign, index = psi_m.index)
     Psi_m_est = res$vector
     dm = res$values
+    Lm = res$n.values
     
     ## Estimate \phi_{ml}(v) and \beta_m ##
     cov.mat = cov.M1 - Psi_m_est %*% diag(dm) %*% t(Psi_m_est)
     cov.mat.approx = cov_approx(cov.mat, V)
+    sigma_m = sqrt( mean(diag(cov.mat) - diag(cov.mat.approx)) )
     res = eigen2(cov.mat.approx, n.values = L0, V = V, sign = phi_m.sign, index = phi_m.index)
     Phi_m_est_n = res$vector
     
@@ -71,8 +73,9 @@ search <- function(M1, M2, xi1, xi2, L0, Lm, V,
   }
   
   l = list(beta_m = beta_m, Phi_m_est = Phi_m_est, Psi_m_est = Psi_m_est, 
-           dm = dm, 
-           beta_m_all = beta_m_all, curr.eps.phi = curr.eps.phi)
+           dm = dm, sigma_m = sigma_m, 
+           beta_m_all = beta_m_all, curr.eps.phi = curr.eps.phi, 
+           Lm = Lm)
 }
 
 plot.function <- function(obsgrid, f.index, f.true, f.all, ylim){

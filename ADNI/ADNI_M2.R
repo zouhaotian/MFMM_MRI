@@ -16,7 +16,9 @@ library(mfaces)
 library(orthogonalsplinebasis)
 library(statmod)
 library(loo)
-rstan_options(auto_write = TRUE)
+rstan_options(auto_write = FALSE)
+
+set.seed(2020)
 
 source('source_code/functions.R')
 source('source_code/sFPCA.R')
@@ -340,66 +342,65 @@ mu_m_smooth = bs.smooth(mu_m, obsgrid, obsgrid, nbasis = Pm)
 mu_m_expand = matrix(rep(mu_m_smooth$est.value, N), nrow = N, byrow = T)
 M.demean = M.train - mu_m_expand
 
-load('RData/FPCA_Hippo_result.RData')
-Lm = length(FPCA.res$values) - L0
+load('RData/Hippo_Lm.RData')
 
 phi_m.sign = rep(1, L0)
 phi_m.index = rep(1, L0)
 psi_m.sign = rep(1, Lm)
 psi_m.index = rep(1, Lm)
+# 
+# ## Determine the sign of beta_m
+# t_value = c(0, 0.5, 1, 1.5, 2)
+# eps = 0.05
+# cov.mat.full = matrix(NA, nrow = length(t_value)*J, ncol = V)
+# covariates = matrix(NA, nrow = length(t_value)*J, ncol = L0)
+# index = 0
+# 
+# for (t0 in t_value){
+#   long.new = long.i[which(abs(long.i$Time-t0)<eps), ]
+#   for (j in 1:J){
+#     index = index + 1
+#     Y.vec <- as.vector(long.new[, j+2])
+#     cov.mat.full[index, ] = as.vector(cov(Y.vec, M.train[long.new$ID, ]))
+#     for (l in 1:L0){
+#       covariates[index, l] = beta[j]*d0[l]*phi_est[which(tnew==t0), l]
+#     }
+#   }
+# }
+# 
+# H_mat = solve(t(covariates) %*% covariates, t(covariates))
+# Theta = H_mat %*% cov.mat.full
+# theta1 = Theta[1, ]
+# theta2 = Theta[2, ]
+# 
+# phi_m <- matrix(c(theta1, theta2), nrow = V, ncol = L0)
+# phi_sign <- rep(1, L0)
+# phi_index <- rep(1, L0)
+# for (l in 1:L0){
+#   phi_m[, l] <- sign_eigen(phi_m[, l], phi_index[l], phi_sign[l])
+#   tmp = sum(phi_m[, l]^2)
+#   phi_m[, l] <- phi_m[, l]*sqrt(V/tmp)
+# }
+# 
+# covariates2 = matrix(0, nrow = length(t_value)*J, ncol = V)
+# index = 0
+# 
+# for (t0 in t_value){
+#   long.new = long.i[which(abs(long.i$Time-t0)<eps), ]
+#   for (j in 1:J){
+#     index = index + 1
+#     for (l in 1:L0){
+#       covariates2[index, ] = covariates2[index, ] + 
+#         beta[j]*d0[l]*phi_est[which(tnew==t0), l]*phi_m[, l]
+#     } 
+#   }
+# }
+# 
+# tmp = as.vector(covariates2)
+# C_Ym = as.vector(cov.mat.full)
+# beta_m = unname(coef(lm(C_Ym ~ tmp - 1)))
 
-## Determine the sign of beta_m
-t_value = c(0, 0.5, 1, 1.5, 2)
-eps = 0.05
-cov.mat.full = matrix(NA, nrow = length(t_value)*J, ncol = V)
-covariates = matrix(NA, nrow = length(t_value)*J, ncol = L0)
-index = 0
-
-for (t0 in t_value){
-  long.new = long.i[which(abs(long.i$Time-t0)<eps), ]
-  for (j in 1:J){
-    index = index + 1
-    Y.vec <- as.vector(long.new[, j+2])
-    cov.mat.full[index, ] = as.vector(cov(Y.vec, M.train[long.new$ID, ]))
-    for (l in 1:L0){
-      covariates[index, l] = beta[j]*d0[l]*phi_est[which(tnew==t0), l]
-    }
-  }
-}
-
-H_mat = solve(t(covariates) %*% covariates, t(covariates))
-Theta = H_mat %*% cov.mat.full
-theta1 = Theta[1, ]
-theta2 = Theta[2, ]
-
-phi_m <- matrix(c(theta1, theta2), nrow = V, ncol = L0)
-phi_sign <- rep(1, L0)
-phi_index <- rep(1, L0)
-for (l in 1:L0){
-  phi_m[, l] <- sign_eigen(phi_m[, l], phi_index[l], phi_sign[l])
-  tmp = sum(phi_m[, l]^2)
-  phi_m[, l] <- phi_m[, l]*sqrt(V/tmp)
-}
-
-covariates2 = matrix(0, nrow = length(t_value)*J, ncol = V)
-index = 0
-
-for (t0 in t_value){
-  long.new = long.i[which(abs(long.i$Time-t0)<eps), ]
-  for (j in 1:J){
-    index = index + 1
-    for (l in 1:L0){
-      covariates2[index, ] = covariates2[index, ] + 
-        beta[j]*d0[l]*phi_est[which(tnew==t0), l]*phi_m[, l]
-    } 
-  }
-}
-
-tmp = as.vector(covariates2)
-C_Ym = as.vector(cov.mat.full)
-beta_m = unname(coef(lm(C_Ym ~ tmp - 1)))
-
-sign_beta_m = sign(beta_m)
+sign_beta_m = -1
 
 ## Estimate eigenfunction of m_i(v) ##
 ID1 = tmp.ID
@@ -417,6 +418,7 @@ beta_m <- res$beta_m
 dm <- res$dm
 Phi_m_est <- res$Phi_m_est
 Psi_m_est <- res$Psi_m_est
+sigma_m = res$sigma_m
 
 ## Create m_{ij} matrix ##
 m_mat = matrix(NA, nrow = N, ncol = Lm)
@@ -489,10 +491,10 @@ pars <- c('A1', 'A2', 'A3', 'A4', 'A5',
           'd0', 'd1', 'dm',
           'beta', 'sigma',
           'logh0', 'gamma_x', 'gamma0', 'gamma1', 'gamma_m', 
-          'xi', 'zeta_1', 'zeta_2', 'zeta_3', 'zeta_4', 'zeta_5', 'LL', 
+          'xi', 'zeta_1', 'zeta_2', 'zeta_3', 'zeta_4', 'zeta_5', 'LL', 'xi_m', 
           'Y1_imp', 'Y2_imp', 'Y3_imp', 'Y4_imp', 'Y5_imp')
-n.iters = 5000
-n.warmups = 4000
+n.iters = 3000
+n.warmups = 2000
 fitStan <- sampling(md, data = stan_dat, iter = n.iters, warmup = n.warmups, 
                     chains = 2, thin=1, init = inits, pars = pars, seed = 2021,
                     control = list(adapt_delta = 0.8, max_treedepth=10))
@@ -503,7 +505,7 @@ summ = summary(fitStan)$summary[1:(J*P + L0 + L1 + Lm + J-1 + J + n.tau + ncol(x
 write.csv(summ, file = 'RData/summary_posterior_M2.csv')
 
 fname <- paste0('RData/summary_posterior_M2.RData')
-save(list = c('beta_m', 'phi_est', 'psi_est', 'Phi_m_est', 'Psi_m_est'), file = fname)
+save(list = c('beta_m', 'phi_est', 'psi_est', 'Phi_m_est', 'Psi_m_est', 'sigma_m'), file = fname)
 
 ## Compute log likelihood ##
 Q <- 2000 ## 2000 samples
@@ -526,6 +528,7 @@ zeta4_sample <- extract(fitStan, pars = 'zeta_4')$zeta_4
 zeta5_sample <- extract(fitStan, pars = 'zeta_5')$zeta_5
 LL_sample <- extract(fitStan, pars = 'LL')$LL
 Y_imp_sample <- extract(fitStan, pars = c('Y1_imp', 'Y2_imp', 'Y3_imp', 'Y4_imp', 'Y5_imp'))
+xi_m_sample = extract(fitStan, pars = 'xi_m')[[1]]
 
 ll_surv <- LL_sample
 
@@ -559,9 +562,20 @@ for (q in 1:Q){
     ll_long_full[q, ID[i]] <-  ll_long_full[q, ID[i]] + sum(ll_long[q, i, ])
   }
 }
+# 
+# ll_MRI <- array(0, dim = c(Q, N, V)) ## Q*N*V
+# ll_MRI_full <- array(0, dim = c(Q, N))  ## Q*N
+# for (q in 1:Q){
+#   tmp.xi = t(xi_sample[q, , ])    ## N*L0
+#   tmp.xi_m = xi_m_sample[q, , ]   ## N*Lm
+#   tmp.mean = beta_m*(tmp.xi %*% t(Phi_m_est)) + tmp.xi_m %*% t(Psi_m_est)
+#   ll_MRI[q, , ] = ll_MRI[q, , ] + dnorm(M.demean, tmp.mean, sd = sigma_m, log = T)
+#   for (i in 1:N) ll_MRI_full[q, i] = ll_MRI_full[q, i] + sum(ll_MRI[q, i, ])
+# }
 
 Dbar.long <- sum(-2*ll_long_full)/Q
 Dbar.surv <- sum(-2*ll_surv)/Q
+#Dbar.MRI <- sum(-2*ll_MRI_full)/Q
 Dbar <- Dbar.long + Dbar.surv
 
 np <- nrow(summ) - Lm    ## dm is not a parameter
@@ -574,7 +588,8 @@ rel_n_eff <- relative_eff(exp(ll_full), chain_id = rep(1:2, each = 1000))
 looic <- loo(ll_full, r_eff = rel_n_eff, cores = 4)$estimates[3, 1]
 waic <- waic(ll_full)$estimates[3, 1]
 
-l <- list(Dbar.long = Dbar.long, Dbar.surv = Dbar.surv, Dbar = Dbar, 
+l <- list(Dbar.long = Dbar.long, Dbar.surv = Dbar.surv, #Dbar.MRI = Dbar.MRI,
+          Dbar = Dbar, 
           np = np, EAIC = EAIC, EBIC = EBIC,
           looic = looic, waic = waic)
 save(list = 'l', file = 'RData/summary_posterior_M2_MP.RData')

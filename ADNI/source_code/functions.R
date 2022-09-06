@@ -399,10 +399,24 @@ c_int <- function(f1, f2, width){
   return((left_int+right_int)/2)
 }
 
-eigen2 <- function(mat, n.values = 10, V = 100, sign, index){
-  res = eigs_sym(mat, k = n.values + 5, which = 'LM')
+eigen2 <- function(mat, n.values = NULL, V = 100, sign = NULL, index = NULL){
+  if (!is.null(n.values)){
+    res = eigs_sym(mat, k = n.values + 5, which = 'LM')
+  } else {
+    res = eigs_sym(mat, k = 100, which = 'LM')
+    res$values = res$values[which(res$values>0)]
+    var_exp = cumsum(res$values)/sum(res$values)
+    n.values = min(which(var_exp>0.95))
+  }
+  
+  if (is.null(sign)){
+    sign = rep(1, n.values)
+    index = rep(1, n.values)
+  }
+  
   l = list(values = res$values[1:n.values]/V, 
-           vectors = res$vectors[, 1:n.values]*sqrt(V))
+           vectors = res$vectors[, 1:n.values]*sqrt(V), 
+           n.values = n.values)
   for (i in 1:n.values){
     if (sign(l$vectors[index[i], i])!=sign[i]){
       l$vectors[, i] = -l$vectors[, i]

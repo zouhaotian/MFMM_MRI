@@ -16,7 +16,7 @@ library(mfaces)
 library(orthogonalsplinebasis)
 library(statmod)
 library(loo)
-rstan_options(auto_write = TRUE)
+rstan_options(auto_write = FALSE)
 
 source('source_code/functions.R')
 source('source_code/sFPCA.R')
@@ -381,14 +381,14 @@ for (q in 1:Q){
 
 Dbar.long <- sum(-2*ll_long_full)/Q
 Dbar.surv <- sum(-2*ll_surv)/Q
-Dbar <- Dbar.long + Dbar.surv
+Dbar <- Dbar.long + Dbar.surv 
 
 np <- nrow(summ)
 EAIC <- Dbar + 2*np
 EBIC <- Dbar + log(N)*np
 
 ## Compute LOOIC, WAIC ##
-ll_full <- ll_long_full + ll_surv
+ll_full <- ll_long_full + ll_surv 
 rel_n_eff <- relative_eff(exp(ll_full), chain_id = rep(1:2, each = 1000))
 looic <- loo(ll_full, r_eff = rel_n_eff, cores = 4)$estimates[3, 1]
 waic <- waic(ll_full)$estimates[3, 1]

@@ -8,16 +8,10 @@ sim <- function(seed, tp, N){
   m.grid <- (1:V)/V
   tnew <- tp$tnew
   
-  mu <- list(
-    f1 = function(t) 10 + 5*t + 5*t^2,
-    f2 = function(t) 10 + 10*sqrt(t) + 5*sin(2*pi*t),
-    f3 = function(t) sin(2*pi*t) + cos(2*pi*t) + log(t+1)
-  )
+  mu <- tp$mu
   
   mu_m <- function(v) 1 + sin(2*pi*v) + cos(2*pi*v)
   mu_m_obs = mu_m(m.grid)
-  
-  mu_tnew <- list(mu1 = mu[[1]](tnew), mu2 = mu[[2]](tnew), mu3 = mu[[3]](tnew))
   
   L0 <- tp$L0
   phi <- list(
@@ -105,7 +99,7 @@ sim <- function(seed, tp, N){
   for (i in 1:N){
     mi = as.function(alist(v = , beta_m*(xi[i, 1]*phi_m[[1]](v) + xi[i, 2]*phi_m[[2]](v)) + 
                              xi_m[i, 1]*psi_m[[1]](v) + xi_m[i, 2]*psi_m[[2]](v) + xi_m[i, 3]*psi_m[[3]](v) + 
-                             xi_m[i, 4]*psi_m[[4]](v) + xi_m[i, 5]*psi_m[[5]](v) + xi_m[i, 6]*psi_m[[6]](v)))
+                             xi_m[i, 4]*psi_m[[4]](v) + xi_m[i, 5]*psi_m[[5]](v) ))
     for (j in 1:Lm){
       f <- as.function(alist(v = , mi(v)*psi_m[[j]](v)))
       int_m_psi[i, j] <- stats::integrate(f, lower=0, upper=1)$value
@@ -125,8 +119,9 @@ sim <- function(seed, tp, N){
     time <- c(time, tmp.obstime.2)
     time.points <- c(time.points, length(tmp.obstime.2))
     ID <- c(ID, rep(i, length(tmp.obstime.2)))
+    time.index = tmp.obstime.2*100 + 1
     
-    for (j in 1:J) mu_obs[[j]] <- c(mu_obs[[j]], mu[[j]](tmp.obstime.2))
+    for (j in 1:J) mu_obs[[j]] <- c(mu_obs[[j]], mu[[j]][time.index])
     
     for (l in 1:L0) phi_obs[[l]] <- c(phi_obs[[l]], phi[[l]](tmp.obstime.2))
     for (l in 1:L1) psi_obs[[l]] <- c(psi_obs[[l]], psi[[l]](tmp.obstime.2))
@@ -139,7 +134,7 @@ sim <- function(seed, tp, N){
   for (l in 1:L1) psi_obs_mat[, l] <- psi_obs[[l]]
   
   Y <- true.Y <- err <- vector('list', J)
-  for (j in 1:J) err[[j]] <- (sqrt(omega[j])*scale(rnorm(s.time.points)))[, 1]
+  for (j in 1:J) err[[j]] <- (omega[j]*scale(rnorm(s.time.points)))[, 1]
   
   for (i in 1:s.time.points){
     for (j in 1:J){
@@ -158,7 +153,7 @@ sim <- function(seed, tp, N){
   for (i in 1:N){
     u_mi = (xi[i, ] %*% t(phi_m_obs))[1, ]
     f_mi = (xi_m[i, ] %*% t(psi_m_obs))[1, ]
-    err_mi <- (sqrt(omega_m)*scale(rnorm(V)))[, 1]
+    err_mi <- (omega_m*scale(rnorm(V)))[, 1]
     err_mat[i, ] <- err_mi
     m_mat[i, ] <- mu_m_obs + beta_m*u_mi + f_mi + err_mi
     m_true[i, ] <- mu_m_obs + beta_m*u_mi + f_mi

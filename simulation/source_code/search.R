@@ -49,6 +49,7 @@ search <- function(M1, M2, xi1, xi2, L0, Lm, V,
     ## Estimate \phi_{ml}(v) and \beta_m ##
     cov.mat = cov.M1 - Psi_m_est %*% diag(dm) %*% t(Psi_m_est)
     cov.mat.approx = cov_approx(cov.mat, V)
+    sigma_m = sqrt( mean(diag(cov.mat) - diag(cov.mat.approx)) )
     res = eigen2(cov.mat.approx, n.values = L0, V = V, sign = phi_m.sign, index = phi_m.index)
     Phi_m_est_n = res$vector
     
@@ -71,7 +72,7 @@ search <- function(M1, M2, xi1, xi2, L0, Lm, V,
   }
   
   l = list(beta_m = beta_m, Phi_m_est = Phi_m_est, Psi_m_est = Psi_m_est, 
-           dm = dm, 
+           dm = dm, sigma_m = sigma_m, 
            beta_m_all = beta_m_all, curr.eps.phi = curr.eps.phi)
 }
 

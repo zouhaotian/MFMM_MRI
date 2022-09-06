@@ -15,7 +15,9 @@ library(RSpectra)
 library(mfaces)
 library(orthogonalsplinebasis)
 library(loo)
-rstan_options(auto_write = TRUE)
+rstan_options(auto_write = FALSE)
+
+set.seed(2020)
 
 source('source_code/functions.R')
 source('source_code/sFPCA.R')

@@ -17,7 +17,7 @@ library(orthogonalsplinebasis)
 library(statmod)
 library(tdROC)
 library(ipred)
-rstan_options(auto_write = TRUE)
+rstan_options(auto_write = FALSE)
 
 # seed <- 1
 set.seed(2011*seed)
